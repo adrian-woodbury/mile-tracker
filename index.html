@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Mile Tracker</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #00d26a;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00d26a;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary {
+            background: #00d26a;
+            color: #000;
+        }
+        .btn-secondary {
+            background: #16213e;
+            color: #fff;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: #fff;
+        }
+        .stops-list {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .stops-list h3 {
+            margin-bottom: 10px;
+            color: #888;
+            font-size: 14px;
+        }
+        .stop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #2a2a4a;
+        }
+        .stop-item:last-child { border-bottom: none; }
+        .stop-time { color: #888; font-size: 12px; }
+        .stop-miles { color: #00d26a; font-weight: bold; }
+        .stop-address { font-size: 13px; margin-top: 3px; color: #aaa; }
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .status.success { background: #00d26a22; color: #00d26a; }
+        .status.error { background: #e74c3c22; color: #e74c3c; }
+        .status.info { background: #3498db22; color: #3498db; }
+        .hidden { display: none; }
+        .week-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .week-selector button {
+            flex: 1;
+            padding: 10px;
+            background: #16213e;
+            border: none;
+            border-radius: 8px;
+            color: #888;
+            cursor: pointer;
+        }
+        .week-selector button.active {
+            background: #00d26a;
+            color: #000;
+        }
+        .earnings {
+            background: #0f3460;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .earnings-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00d26a;
+        }
+        .earnings-label {
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚗 Mile Tracker</h1>
+    
+    <div class="earnings">
+        <div class="earnings-value" id="earnings">$0.00</div>
+        <div class="earnings-label">Estimated Earnings @ $0.90/mi</div>
+    </div>
+    
+    <div class="stats">
+        <div class="stat-box">
+            <div class="stat-value" id="todayMiles">0.0</div>
+            <div class="stat-label">Miles Today</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="weekMiles">0.0</div>
+            <div class="stat-label">Miles This Week</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="totalStops">0</div>
+            <div class="stat-label">Stops Today</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="weekStops">0</div>
+            <div class="stat-label">Stops This Week</div>
+        </div>
+    </div>
+    
+    <div id="status" class="status hidden"></div>
+    
+    <button class="btn btn-primary" id="markStop">📍 Mark Stop</button>
+    <button class="btn btn-secondary" id="startDay">🚀 Start Day</button>
+    <button class="btn btn-secondary" id="exportData">📊 Export Data</button>
+    <button class="btn btn-danger" id="clearToday">🗑️ Clear Today</button>
+    
+    <div class="stops-list">
+        <h3>TODAY'S STOPS</h3>
+        <div id="stopsList"></div>
+    </div>
+
+    <script>
+        const RATE_PER_MILE = 0.90;
+        
+        // Haversine formula for distance between two points
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 3959; // Earth's radius in miles
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+        
+        // Get today's date key
+        function getDateKey(date = new Date()) {
+            return date.toISOString().split('T')[0];
+        }
+        
+        // Get week start (Sunday)
+        function getWeekStart() {
+            const now = new Date();
+            const day = now.getDay();
+            const diff = now.getDate() - day;
+            return new Date(now.setDate(diff)).toISOString().split('T')[0];
+        }
+        
+        // Load stops from localStorage
+        function loadStops() {
+            return JSON.parse(localStorage.getItem('mileTracker') || '{}');
+        }
+        
+        // Save stops to localStorage
+        function saveStops(data) {
+            localStorage.setItem('mileTracker', JSON.stringify(data));
+        }
+        
+        // Get today's stops
+        function getTodayStops() {
+            const data = loadStops();
+            return data[getDateKey()] || [];
+        }
+        
+        // Get week's stops
+        function getWeekStops() {
+            const data = loadStops();
+            const weekStart = new Date(getWeekStart());
+            let stops = [];
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(weekStart);
+                date.setDate(date.getDate() + i);
+                const key = getDateKey(date);
+                if (data[key]) {
+                    stops = stops.concat(data[key]);
+                }
+            }
+            return stops;
+        }
+        
+        // Calculate total miles from stops
+        function calculateMiles(stops) {
+            let total = 0;
+            for (let i = 1; i < stops.length; i++) {
+                total += getDistance(
+                    stops[i-1].lat, stops[i-1].lon,
+                    stops[i].lat, stops[i].lon
+                );
+            }
+            return total;
+        }
+        
+        // Show status message
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.classList.remove('hidden');
+            setTimeout(() => status.classList.add('hidden'), 3000);
+        }
+        
+        // Reverse geocode to get address
+        async function getAddress(lat, lon) {
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+                const data = await res.json();
+                return data.display_name?.split(',').slice(0, 2).join(',') || 'Unknown location';
+            } catch {
+                return 'Unknown location';
+            }
+        }
+        
+        // Update UI
+        function updateUI() {
+            const todayStops = getTodayStops();
+            const weekStops = getWeekStops();
+            const todayMiles = calculateMiles(todayStops);
+            const weekMiles = calculateMiles(weekStops);
+            
+            document.getElementById('todayMiles').textContent = todayMiles.toFixed(1);
+            document.getElementById('weekMiles').textContent = weekMiles.toFixed(1);
+            document.getElementById('totalStops').textContent = todayStops.length;
+            document.getElementById('weekStops').textContent = weekStops.length;
+            document.getElementById('earnings').textContent = '$' + (weekMiles * RATE_PER_MILE).toFixed(2);
+            
+            // Render stops list
+            const list = document.getElementById('stopsList');
+            if (todayStops.length === 0) {
+                list.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">No stops yet. Press "Start Day" to begin.</div>';
+            } else {
+                list.innerHTML = todayStops.map((stop, i) => {
+                    const miles = i > 0 ? getDistance(
+                        todayStops[i-1].lat, todayStops[i-1].lon,
+                        stop.lat, stop.lon
+                    ).toFixed(1) : '0.0';
+                    const time = new Date(stop.time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                    return `
+                        <div class="stop-item">
+                            <div>
+                                <div class="stop-time">#${i + 1} · ${time}</div>
+                                <div class="stop-address">${stop.address || 'Loading...'}</div>
+                            </div>
+                            <div class="stop-miles">${i > 0 ? '+' + miles + ' mi' : 'START'}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        // Mark current location as a stop
+        async function markStop() {
+            if (!navigator.geolocation) {
+                showStatus('Geolocation not supported', 'error');
+                return;
+            }
+            
+            showStatus('Getting location...', 'info');
+            
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude: lat, longitude: lon } = position.coords;
+                    const address = await getAddress(lat, lon);
+                    
+                    const data = loadStops();
+                    const today = getDateKey();
+                    if (!data[today]) data[today] = [];
+                    
+                    data[today].push({
+                        lat,
+                        lon,
+                        time: new Date().toISOString(),
+                        address
+                    });
+                    
+                    saveStops(data);
+                    updateUI();
+                    showStatus('Stop marked!', 'success');
+                },
+                (error) => {
+                    showStatus('Location error: ' + error.message, 'error');
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+        
+        // Export data as CSV
+        function exportData() {
+            const data = loadStops();
+            let csv = 'Date,Stop#,Time,Address,Lat,Lon,Miles\n';
+            
+            Object.keys(data).sort().forEach(date => {
+                const stops = data[date];
+                stops.forEach((stop, i) => {
+                    const miles = i > 0 ? getDistance(
+                        stops[i-1].lat, stops[i-1].lon,
+                        stop.lat, stop.lon
+                    ).toFixed(2) : '0';
+                    csv += `${date},${i+1},"${new Date(stop.time).toLocaleTimeString()}","${stop.address}",${stop.lat},${stop.lon},${miles}\n`;
+                });
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `miles-${getDateKey()}.csv`;
+            a.click();
+            showStatus('Data exported!', 'success');
+        }
+        
+        // Clear today's data
+        function clearToday() {
+            if (!confirm('Clear all stops for today?')) return;
+            const data = loadStops();
+            delete data[getDateKey()];
+            saveStops(data);
+            updateUI();
+            showStatus('Today cleared', 'success');
+        }
+        
+        // Event listeners
+        document.getElementById('markStop').addEventListener('click', markStop);
+        document.getElementById('startDay').addEventListener('click', markStop);
+        document.getElementById('exportData').addEventListener('click', exportData);
+        document.getElementById('clearToday').addEventListener('click', clearToday);
+        
+        // Initial load
+        updateUI();
+        
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>
