@@ -1,11 +1,12 @@
 {
   "name": "Mile Tracker",
   "short_name": "Miles",
-  "description": "Track delivery miles with GPS",
+  "description": "Track courier miles and net cash with GPS",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1a1a2e",
-  "theme_color": "#00d26a",
+  "orientation": "portrait",
+  "background_color": "#0B0D10",
+  "theme_color": "#0B0D10",
   "icons": [
     {
       "src": "icon-192.png",

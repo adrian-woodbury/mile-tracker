@@ -1,396 +1,496 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Mile Tracker</title>
-    <link rel="manifest" href="manifest.json">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a2e;
-            color: #eee;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-            color: #00d26a;
-            margin-bottom: 20px;
-            font-size: 24px;
-        }
-        .stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .stat-box {
-            background: #16213e;
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-        }
-        .stat-value {
-            font-size: 28px;
-            font-weight: bold;
-            color: #00d26a;
-        }
-        .stat-label {
-            font-size: 12px;
-            color: #888;
-            margin-top: 5px;
-        }
-        .btn {
-            width: 100%;
-            padding: 18px;
-            border: none;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 15px;
-            transition: transform 0.1s;
-        }
-        .btn:active { transform: scale(0.98); }
-        .btn-primary {
-            background: #00d26a;
-            color: #000;
-        }
-        .btn-secondary {
-            background: #16213e;
-            color: #fff;
-        }
-        .btn-danger {
-            background: #e74c3c;
-            color: #fff;
-        }
-        .stops-list {
-            background: #16213e;
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .stops-list h3 {
-            margin-bottom: 10px;
-            color: #888;
-            font-size: 14px;
-        }
-        .stop-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #2a2a4a;
-        }
-        .stop-item:last-child { border-bottom: none; }
-        .stop-time { color: #888; font-size: 12px; }
-        .stop-miles { color: #00d26a; font-weight: bold; }
-        .stop-address { font-size: 13px; margin-top: 3px; color: #aaa; }
-        .status {
-            text-align: center;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-        .status.success { background: #00d26a22; color: #00d26a; }
-        .status.error { background: #e74c3c22; color: #e74c3c; }
-        .status.info { background: #3498db22; color: #3498db; }
-        .hidden { display: none; }
-        .week-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        .week-selector button {
-            flex: 1;
-            padding: 10px;
-            background: #16213e;
-            border: none;
-            border-radius: 8px;
-            color: #888;
-            cursor: pointer;
-        }
-        .week-selector button.active {
-            background: #00d26a;
-            color: #000;
-        }
-        .earnings {
-            background: #0f3460;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .earnings-value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #00d26a;
-        }
-        .earnings-label {
-            font-size: 12px;
-            color: #888;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B0D10">
+<title>Mile Tracker</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  :root{
+    --bg:#0B0D10;
+    --surface:#14171C;
+    --surface-2:#1B1F26;
+    --line:#252A33;
+    --text:#F2F4F7;
+    --muted:#8A93A3;
+    --accent:#22E07C;
+    --accent-dim:#22E07C1a;
+    --danger:#FF5A52;
+    --info:#4DA3FF;
+    --r:16px;
+    --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    padding:calc(env(safe-area-inset-top,0px) + 14px) 16px calc(var(--safe-b) + 116px);
+    max-width:520px;margin:0 auto;
+  }
+  /* ---------- header ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .mark{
+    width:34px;height:34px;border-radius:11px;flex:none;
+    background:linear-gradient(145deg,var(--accent),#12b463);
+    display:grid;place-items:center;color:#03230f;
+  }
+  .brand h1{font-size:16px;font-weight:650;letter-spacing:-.2px}
+  .brand span{display:block;font-size:11px;color:var(--muted);font-weight:500;margin-top:1px}
+  .icon-btn{
+    width:36px;height:36px;border-radius:11px;border:1px solid var(--line);
+    background:var(--surface);color:var(--muted);display:grid;place-items:center;cursor:pointer;
+  }
+  .icon-btn:active{background:var(--surface-2)}
+  /* ---------- segmented ---------- */
+  .seg{display:flex;padding:3px;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:14px}
+  .seg button{
+    flex:1;padding:9px;border:none;background:none;border-radius:9px;
+    color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
+    transition:background .15s,color .15s;
+  }
+  .seg button.active{background:var(--surface-2);color:var(--text);box-shadow:0 1px 2px #0006}
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative;overflow:hidden;
+    background:linear-gradient(160deg,#18211C 0%,var(--surface) 55%);
+    border:1px solid var(--line);border-radius:22px;padding:20px;margin-bottom:12px;
+  }
+  .hero::after{
+    content:'';position:absolute;top:-70px;right:-50px;width:190px;height:190px;border-radius:50%;
+    background:radial-gradient(circle,#22E07C24,transparent 68%);pointer-events:none;
+  }
+  .hero-label{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .hero-value{font-size:46px;font-weight:700;letter-spacing:-2px;line-height:1.05;margin:6px 0 2px;
+    font-variant-numeric:tabular-nums;color:var(--accent)}
+  .hero-sub{font-size:12px;color:var(--muted)}
+  .hero-split{display:flex;gap:18px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+  .hero-split div{flex:1}
+  .hero-split b{display:block;font-size:16px;font-weight:650;font-variant-numeric:tabular-nums}
+  .hero-split small{font-size:10.5px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+  .neg{color:var(--danger)}
+  /* ---------- stats ---------- */
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+  .stat-value{font-size:24px;font-weight:650;letter-spacing:-.6px;font-variant-numeric:tabular-nums}
+  .stat-label{font-size:11px;color:var(--muted);margin-top:3px;font-weight:500}
+  /* ---------- list ---------- */
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin:0 4px 10px}
+  .section-head h2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:650}
+  .section-head a{font-size:12px;color:var(--muted);text-decoration:none;cursor:pointer}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 16px}
+  .stop{position:relative;display:flex;align-items:center;gap:14px;padding:13px 0 13px 26px}
+  .stop:not(:last-child)::after{content:'';position:absolute;left:5px;top:28px;bottom:-4px;width:2px;background:var(--line)}
+  .dot{position:absolute;left:0;top:19px;width:12px;height:12px;border-radius:50%;
+    background:var(--bg);border:2px solid var(--line)}
+  .stop.first .dot{border-color:var(--accent);background:var(--accent)}
+  .stop-main{flex:1;min-width:0}
+  .stop-addr{font-size:14px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stop-meta{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .pill{font-size:12px;font-weight:650;padding:5px 9px;border-radius:8px;flex:none;
+    background:var(--accent-dim);color:var(--accent);font-variant-numeric:tabular-nums}
+  .pill.start{background:var(--surface-2);color:var(--muted)}
+  .empty{text-align:center;padding:34px 16px;color:var(--muted)}
+  .empty svg{opacity:.35;margin-bottom:10px}
+  .empty p{font-size:13px;line-height:1.5}
+  /* ---------- action bar ---------- */
+  .actionbar{
+    position:fixed;left:0;right:0;bottom:0;z-index:20;
+    padding:12px 16px calc(var(--safe-b) + 12px);
+    background:linear-gradient(to top,var(--bg) 62%,#0B0D10e0 85%,transparent);
+    display:flex;gap:10px;max-width:520px;margin:0 auto;
+  }
+  .btn{
+    border:none;border-radius:14px;font-family:inherit;font-size:16px;font-weight:650;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .08s ease,filter .15s;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn-primary{flex:1;padding:17px;background:var(--accent);color:#04240F;box-shadow:0 6px 22px #22e07c33}
+  .btn-primary:disabled{filter:grayscale(.6) brightness(.7);box-shadow:none}
+  .btn-ghost{width:56px;background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+  /* ---------- sheet ---------- */
+  .scrim{position:fixed;inset:0;background:#000a;backdrop-filter:blur(3px);z-index:30;opacity:0;pointer-events:none;transition:opacity .2s}
+  .scrim.open{opacity:1;pointer-events:auto}
+  .sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:31;max-width:520px;margin:0 auto;
+    background:var(--surface);border:1px solid var(--line);border-bottom:none;
+    border-radius:24px 24px 0 0;padding:10px 20px calc(var(--safe-b) + 22px);
+    transform:translateY(102%);transition:transform .26s cubic-bezier(.3,.9,.3,1);
+  }
+  .sheet.open{transform:translateY(0)}
+  .grabber{width:38px;height:4px;border-radius:99px;background:var(--line);margin:0 auto 16px}
+  .sheet h3{font-size:16px;margin-bottom:4px}
+  .sheet .hint{font-size:12px;color:var(--muted);margin-bottom:16px}
+  .field{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .field label{font-size:14px}
+  .field small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+  .field input{
+    width:104px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);
+    background:var(--surface-2);color:var(--text);font-size:15px;font-family:inherit;text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  .field input:focus{outline:none;border-color:var(--accent)}
+  .sheet-actions{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+  .row-btn{
+    width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);
+    color:var(--text);font-size:14.5px;font-weight:600;font-family:inherit;cursor:pointer;
+    display:flex;align-items:center;gap:10px;
+  }
+  .row-btn:active{filter:brightness(1.25)}
+  .row-btn.danger{color:var(--danger);border-color:#FF5A5230}
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed;left:50%;transform:translate(-50%,-14px);
+    top:calc(env(safe-area-inset-top,0px) + 12px);z-index:50;
+    display:flex;align-items:center;gap:9px;
+    padding:11px 16px;border-radius:12px;font-size:13.5px;font-weight:550;
+    background:var(--surface-2);border:1px solid var(--line);color:var(--text);
+    box-shadow:0 10px 30px #0009;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
+    max-width:92vw;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast i{width:8px;height:8px;border-radius:50%;background:var(--info);flex:none}
+  .toast.success i{background:var(--accent)}
+  .toast.error i{background:var(--danger)}
+  .spin{animation:sp 1s linear infinite;transform-origin:center}
+  @keyframes sp{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
-    <h1>🚗 Mile Tracker</h1>
-    
-    <div class="earnings">
-        <div class="earnings-value" id="earnings">$0.00</div>
-        <div class="earnings-label">Estimated Earnings @ $0.90/mi</div>
-    </div>
-    
-    <div class="stats">
-        <div class="stat-box">
-            <div class="stat-value" id="todayMiles">0.0</div>
-            <div class="stat-label">Miles Today</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-value" id="weekMiles">0.0</div>
-            <div class="stat-label">Miles This Week</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-value" id="totalStops">0</div>
-            <div class="stat-label">Stops Today</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-value" id="weekStops">0</div>
-            <div class="stat-label">Stops This Week</div>
-        </div>
-    </div>
-    
-    <div id="status" class="status hidden"></div>
-    
-    <button class="btn btn-primary" id="markStop">📍 Mark Stop</button>
-    <button class="btn btn-secondary" id="startDay">🚀 Start Day</button>
-    <button class="btn btn-secondary" id="exportData">📊 Export Data</button>
-    <button class="btn btn-danger" id="clearToday">🗑️ Clear Today</button>
-    
-    <div class="stops-list">
-        <h3>TODAY'S STOPS</h3>
-        <div id="stopsList"></div>
-    </div>
 
-    <script>
-        const RATE_PER_MILE = 0.90;
-        
-        // Haversine formula for distance between two points
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 3959; // Earth's radius in miles
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-        
-        // Get today's date key
-        function getDateKey(date = new Date()) {
-            return date.toISOString().split('T')[0];
-        }
-        
-        // Get week start (Sunday)
-        function getWeekStart() {
-            const now = new Date();
-            const day = now.getDay();
-            const diff = now.getDate() - day;
-            return new Date(now.setDate(diff)).toISOString().split('T')[0];
-        }
-        
-        // Load stops from localStorage
-        function loadStops() {
-            return JSON.parse(localStorage.getItem('mileTracker') || '{}');
-        }
-        
-        // Save stops to localStorage
-        function saveStops(data) {
-            localStorage.setItem('mileTracker', JSON.stringify(data));
-        }
-        
-        // Get today's stops
-        function getTodayStops() {
-            const data = loadStops();
-            return data[getDateKey()] || [];
-        }
-        
-        // Get week's stops
-        function getWeekStops() {
-            const data = loadStops();
-            const weekStart = new Date(getWeekStart());
-            let stops = [];
-            for (let i = 0; i < 7; i++) {
-                const date = new Date(weekStart);
-                date.setDate(date.getDate() + i);
-                const key = getDateKey(date);
-                if (data[key]) {
-                    stops = stops.concat(data[key]);
-                }
-            }
-            return stops;
-        }
-        
-        // Calculate total miles from stops
-        function calculateMiles(stops) {
-            let total = 0;
-            for (let i = 1; i < stops.length; i++) {
-                total += getDistance(
-                    stops[i-1].lat, stops[i-1].lon,
-                    stops[i].lat, stops[i].lon
-                );
-            }
-            return total;
-        }
-        
-        // Show status message
-        function showStatus(message, type = 'info') {
-            const status = document.getElementById('status');
-            status.textContent = message;
-            status.className = `status ${type}`;
-            status.classList.remove('hidden');
-            setTimeout(() => status.classList.add('hidden'), 3000);
-        }
-        
-        // Reverse geocode to get address
-        async function getAddress(lat, lon) {
-            try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
-                const data = await res.json();
-                return data.display_name?.split(',').slice(0, 2).join(',') || 'Unknown location';
-            } catch {
-                return 'Unknown location';
-            }
-        }
-        
-        // Update UI
-        function updateUI() {
-            const todayStops = getTodayStops();
-            const weekStops = getWeekStops();
-            const todayMiles = calculateMiles(todayStops);
-            const weekMiles = calculateMiles(weekStops);
-            
-            document.getElementById('todayMiles').textContent = todayMiles.toFixed(1);
-            document.getElementById('weekMiles').textContent = weekMiles.toFixed(1);
-            document.getElementById('totalStops').textContent = todayStops.length;
-            document.getElementById('weekStops').textContent = weekStops.length;
-            document.getElementById('earnings').textContent = '$' + (weekMiles * RATE_PER_MILE).toFixed(2);
-            
-            // Render stops list
-            const list = document.getElementById('stopsList');
-            if (todayStops.length === 0) {
-                list.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">No stops yet. Press "Start Day" to begin.</div>';
-            } else {
-                list.innerHTML = todayStops.map((stop, i) => {
-                    const miles = i > 0 ? getDistance(
-                        todayStops[i-1].lat, todayStops[i-1].lon,
-                        stop.lat, stop.lon
-                    ).toFixed(1) : '0.0';
-                    const time = new Date(stop.time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-                    return `
-                        <div class="stop-item">
-                            <div>
-                                <div class="stop-time">#${i + 1} · ${time}</div>
-                                <div class="stop-address">${stop.address || 'Loading...'}</div>
-                            </div>
-                            <div class="stop-miles">${i > 0 ? '+' + miles + ' mi' : 'START'}</div>
-                        </div>
-                    `;
-                }).join('');
-            }
-        }
-        
-        // Mark current location as a stop
-        async function markStop() {
-            if (!navigator.geolocation) {
-                showStatus('Geolocation not supported', 'error');
-                return;
-            }
-            
-            showStatus('Getting location...', 'info');
-            
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    const { latitude: lat, longitude: lon } = position.coords;
-                    const address = await getAddress(lat, lon);
-                    
-                    const data = loadStops();
-                    const today = getDateKey();
-                    if (!data[today]) data[today] = [];
-                    
-                    data[today].push({
-                        lat,
-                        lon,
-                        time: new Date().toISOString(),
-                        address
-                    });
-                    
-                    saveStops(data);
-                    updateUI();
-                    showStatus('Stop marked!', 'success');
-                },
-                (error) => {
-                    showStatus('Location error: ' + error.message, 'error');
-                },
-                { enableHighAccuracy: true, timeout: 10000 }
-            );
-        }
-        
-        // Export data as CSV
-        function exportData() {
-            const data = loadStops();
-            let csv = 'Date,Stop#,Time,Address,Lat,Lon,Miles\n';
-            
-            Object.keys(data).sort().forEach(date => {
-                const stops = data[date];
-                stops.forEach((stop, i) => {
-                    const miles = i > 0 ? getDistance(
-                        stops[i-1].lat, stops[i-1].lon,
-                        stop.lat, stop.lon
-                    ).toFixed(2) : '0';
-                    csv += `${date},${i+1},"${new Date(stop.time).toLocaleTimeString()}","${stop.address}",${stop.lat},${stop.lon},${miles}\n`;
-                });
-            });
-            
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `miles-${getDateKey()}.csv`;
-            a.click();
-            showStatus('Data exported!', 'success');
-        }
-        
-        // Clear today's data
-        function clearToday() {
-            if (!confirm('Clear all stops for today?')) return;
-            const data = loadStops();
-            delete data[getDateKey()];
-            saveStops(data);
-            updateUI();
-            showStatus('Today cleared', 'success');
-        }
-        
-        // Event listeners
-        document.getElementById('markStop').addEventListener('click', markStop);
-        document.getElementById('startDay').addEventListener('click', markStop);
-        document.getElementById('exportData').addEventListener('click', exportData);
-        document.getElementById('clearToday').addEventListener('click', clearToday);
-        
-        // Initial load
-        updateUI();
-        
-        // Register service worker for PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch(() => {});
-        }
-    </script>
+<div class="topbar">
+  <div class="brand">
+    <div class="mark">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M6 17l1.5-6.5A2 2 0 0 1 9.45 9h5.1a2 2 0 0 1 1.95 1.5L18 17"/><circle cx="7.5" cy="17.5" r="1.6"/><circle cx="16.5" cy="17.5" r="1.6"/></svg>
+    </div>
+    <div>
+      <h1>Mile Tracker</h1>
+      <span id="dateLabel">—</span>
+    </div>
+  </div>
+  <button class="icon-btn" id="openSettings" aria-label="Settings">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+</div>
+
+<div class="seg" id="seg">
+  <button data-scope="today" class="active">Today</button>
+  <button data-scope="week">This Week</button>
+</div>
+
+<div class="hero">
+  <div class="hero-label" id="heroLabel">Net Cash · Today</div>
+  <div class="hero-value" id="netValue">$0.00</div>
+  <div class="hero-sub" id="heroSub">after fuel · $0.90/mi</div>
+  <div class="hero-split">
+    <div><b id="grossValue">$0.00</b><small>Gross paid</small></div>
+    <div><b class="neg" id="gasValue">−$0.00</b><small>Fuel cost</small></div>
+    <div><b id="milesValue">0.0</b><small>Miles</small></div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-value" id="statStops">0</div><div class="stat-label" id="statStopsLabel">Stops today</div></div>
+  <div class="stat"><div class="stat-value" id="statPerStop">$0.00</div><div class="stat-label">Net per stop</div></div>
+  <div class="stat"><div class="stat-value" id="statDays">0</div><div class="stat-label">Days logged this week</div></div>
+  <div class="stat"><div class="stat-value" id="statAvg">0.0</div><div class="stat-label">Avg miles / stop</div></div>
+</div>
+
+<div class="section-head">
+  <h2>Today's route</h2>
+  <a id="exportLink">Export CSV</a>
+</div>
+<div class="card" id="stopsCard"><div id="stopsList"></div></div>
+
+<div class="actionbar">
+  <button class="btn btn-primary" id="markStop">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    <span id="markLabel">Start Day</span>
+  </button>
+  <button class="btn btn-ghost" id="undoStop" aria-label="Undo last stop">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M3.5 13a9 9 0 1 0 2.1-6.4L3 9"/></svg>
+  </button>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet">
+  <div class="grabber"></div>
+  <h3>Settings</h3>
+  <p class="hint">Net cash = miles × rate − fuel. Tune these to your car.</p>
+  <div class="field">
+    <div><label for="inRate">Pay rate</label><small>Dollars per mile</small></div>
+    <input id="inRate" type="number" step="0.01" inputmode="decimal">
+  </div>
+  <div class="field">
+    <div><label for="inGas">Gas price</label><small>Dollars per gallon</small></div>
+    <input id="inGas" type="number" step="0.01" inputmode="decimal">
+  </div>
+  <div class="field">
+    <div><label for="inMpg">Vehicle MPG</label><small>Real-world average</small></div>
+    <input id="inMpg" type="number" step="0.1" inputmode="decimal">
+  </div>
+  <div class="sheet-actions">
+    <button class="row-btn" id="exportData">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+      Export all data (CSV)
+    </button>
+    <button class="row-btn danger" id="clearToday">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+      Clear today's stops
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i></i><span id="toastMsg"></span></div>
+
+<script>
+/* ---------------- settings ---------------- */
+const DEFAULTS = { rate: 0.90, gas: 3.10, mpg: 21 };
+function settings(){
+  return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('mileTrackerSettings') || '{}'));
+}
+function saveSettings(s){ localStorage.setItem('mileTrackerSettings', JSON.stringify(s)); }
+
+/* ---------------- geo math ---------------- */
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 3959;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+/* ---------------- storage ---------------- */
+function getDateKey(date = new Date()) {
+  const d = new Date(date.getTime() - date.getTimezoneOffset()*60000);
+  return d.toISOString().split('T')[0];
+}
+function getWeekStartDate() {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  d.setDate(d.getDate() - d.getDay());
+  return d;
+}
+const loadStops = () => JSON.parse(localStorage.getItem('mileTracker') || '{}');
+const saveStops = d => localStorage.setItem('mileTracker', JSON.stringify(d));
+const getTodayStops = () => loadStops()[getDateKey()] || [];
+
+function getWeekDays() {
+  const data = loadStops(), start = getWeekStartDate(), days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start); d.setDate(d.getDate() + i);
+    const key = getDateKey(d);
+    if (data[key] && data[key].length) days.push(data[key]);
+  }
+  return days;
+}
+/* miles are summed per-day so an overnight jump between days isn't billed */
+const calcMiles = stops => stops.reduce((t, s, i) =>
+  i ? t + getDistance(stops[i-1].lat, stops[i-1].lon, s.lat, s.lon) : 0, 0);
+
+/* ---------------- ui state ---------------- */
+let scope = 'today';
+
+function money(n){ return '$' + n.toFixed(2); }
+
+function updateUI() {
+  const s = settings();
+  const todayStops = getTodayStops();
+  const weekDays = getWeekDays();
+
+  const todayMiles = calcMiles(todayStops);
+  const weekMiles = weekDays.reduce((t, d) => t + calcMiles(d), 0);
+  const weekStops = weekDays.reduce((t, d) => t + d.length, 0);
+
+  const isWeek = scope === 'week';
+  const miles = isWeek ? weekMiles : todayMiles;
+  const stops = isWeek ? weekStops : todayStops.length;
+
+  const gross = miles * s.rate;
+  const fuel = s.mpg > 0 ? (miles / s.mpg) * s.gas : 0;
+  const net = gross - fuel;
+
+  document.getElementById('heroLabel').textContent = 'Net Cash · ' + (isWeek ? 'This Week' : 'Today');
+  document.getElementById('heroSub').textContent =
+    `after fuel · ${money(s.rate).replace('$','$')}/mi · ${s.mpg} mpg @ ${money(s.gas)}/gal`;
+  document.getElementById('netValue').textContent = money(net);
+  document.getElementById('grossValue').textContent = money(gross);
+  document.getElementById('gasValue').textContent = '−' + money(fuel);
+  document.getElementById('milesValue').textContent = miles.toFixed(1);
+
+  document.getElementById('statStops').textContent = stops;
+  document.getElementById('statStopsLabel').textContent = isWeek ? 'Stops this week' : 'Stops today';
+  document.getElementById('statPerStop').textContent = money(stops > 1 ? net / stops : 0);
+  document.getElementById('statDays').textContent = weekDays.length;
+  document.getElementById('statAvg').textContent = (stops > 1 ? miles / stops : 0).toFixed(1);
+
+  document.getElementById('dateLabel').textContent =
+    new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
+
+  document.getElementById('markLabel').textContent = todayStops.length ? 'Mark Stop' : 'Start Day';
+  document.getElementById('undoStop').style.display = todayStops.length ? 'flex' : 'none';
+
+  const list = document.getElementById('stopsList');
+  if (!todayStops.length) {
+    list.innerHTML = `<div class="empty">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <p>No stops logged yet.<br>Tap <b>Start Day</b> when you pull off.</p></div>`;
+  } else {
+    list.innerHTML = todayStops.map((stop, i) => {
+      const m = i ? getDistance(todayStops[i-1].lat, todayStops[i-1].lon, stop.lat, stop.lon) : 0;
+      const time = new Date(stop.time).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+      return `<div class="stop ${i ? '' : 'first'}">
+          <div class="dot"></div>
+          <div class="stop-main">
+            <div class="stop-addr">${stop.address || 'Locating…'}</div>
+            <div class="stop-meta">Stop ${i+1} · ${time}${i ? ' · ' + money(m * settings().rate) : ''}</div>
+          </div>
+          <div class="pill ${i ? '' : 'start'}">${i ? '+' + m.toFixed(1) + ' mi' : 'START'}</div>
+        </div>`;
+    }).join('');
+  }
+}
+
+/* ---------------- toast ---------------- */
+let toastTimer;
+function showStatus(message, type = 'info') {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = message;
+  t.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast ' + type, 2600);
+}
+
+/* ---------------- actions ---------------- */
+async function getAddress(lat, lon) {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+    const data = await res.json();
+    return data.display_name?.split(',').slice(0, 2).join(',').trim() || 'Unknown location';
+  } catch { return 'Unknown location'; }
+}
+
+let busy = false;
+async function markStop() {
+  if (busy) return;
+  if (!navigator.geolocation) return showStatus('Geolocation not supported', 'error');
+  busy = true;
+  const btn = document.getElementById('markStop');
+  btn.disabled = true;
+  document.getElementById('markLabel').textContent = 'Locating…';
+  showStatus('Getting your location…');
+
+  navigator.geolocation.getCurrentPosition(async position => {
+    const { latitude: lat, longitude: lon } = position.coords;
+    const data = loadStops(), today = getDateKey();
+    if (!data[today]) data[today] = [];
+    const entry = { lat, lon, time: new Date().toISOString(), address: null };
+    data[today].push(entry);
+    saveStops(data);
+    busy = false; btn.disabled = false;
+    updateUI();
+    showStatus('Stop marked', 'success');
+
+    const address = await getAddress(lat, lon);
+    const d2 = loadStops();
+    const list = d2[today] || [];
+    const hit = list.find(s => s.time === entry.time);
+    if (hit) { hit.address = address; saveStops(d2); updateUI(); }
+  }, err => {
+    busy = false; btn.disabled = false;
+    updateUI();
+    showStatus('Location error: ' + err.message, 'error');
+  }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+}
+
+function undoStop() {
+  const data = loadStops(), today = getDateKey();
+  if (!data[today] || !data[today].length) return;
+  if (!confirm('Remove the last stop?')) return;
+  data[today].pop();
+  if (!data[today].length) delete data[today];
+  saveStops(data);
+  updateUI();
+  showStatus('Last stop removed', 'success');
+}
+
+function exportData() {
+  const s = settings(), data = loadStops();
+  let csv = 'Date,Stop#,Time,Address,Lat,Lon,Miles,Gross,Fuel,Net\n';
+  Object.keys(data).sort().forEach(date => {
+    data[date].forEach((stop, i) => {
+      const m = i ? getDistance(data[date][i-1].lat, data[date][i-1].lon, stop.lat, stop.lon) : 0;
+      const gross = m * s.rate, fuel = s.mpg > 0 ? (m / s.mpg) * s.gas : 0;
+      csv += `${date},${i+1},"${new Date(stop.time).toLocaleTimeString()}","${(stop.address||'').replace(/"/g,'""')}",${stop.lat},${stop.lon},${m.toFixed(2)},${gross.toFixed(2)},${fuel.toFixed(2)},${(gross-fuel).toFixed(2)}\n`;
+    });
+  });
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = `miles-${getDateKey()}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  showStatus('CSV exported', 'success');
+}
+
+function clearToday() {
+  if (!confirm("Clear ALL of today's stops? This can't be undone.")) return;
+  const data = loadStops();
+  delete data[getDateKey()];
+  saveStops(data);
+  updateUI(); closeSheet();
+  showStatus('Today cleared', 'success');
+}
+
+/* ---------------- sheet ---------------- */
+function openSheet() {
+  const s = settings();
+  inRate.value = s.rate; inGas.value = s.gas; inMpg.value = s.mpg;
+  sheet.classList.add('open'); scrim.classList.add('open');
+}
+function closeSheet() {
+  const s = {
+    rate: parseFloat(inRate.value) || DEFAULTS.rate,
+    gas:  parseFloat(inGas.value)  || DEFAULTS.gas,
+    mpg:  parseFloat(inMpg.value)  || DEFAULTS.mpg
+  };
+  saveSettings(s);
+  sheet.classList.remove('open'); scrim.classList.remove('open');
+  updateUI();
+}
+
+/* ---------------- wiring ---------------- */
+document.getElementById('markStop').addEventListener('click', markStop);
+document.getElementById('undoStop').addEventListener('click', undoStop);
+document.getElementById('exportData').addEventListener('click', exportData);
+document.getElementById('exportLink').addEventListener('click', exportData);
+document.getElementById('clearToday').addEventListener('click', clearToday);
+document.getElementById('openSettings').addEventListener('click', openSheet);
+document.getElementById('scrim').addEventListener('click', closeSheet);
+['inRate','inGas','inMpg'].forEach(id =>
+  document.getElementById(id).addEventListener('change', () => {
+    saveSettings({
+      rate: parseFloat(inRate.value) || DEFAULTS.rate,
+      gas:  parseFloat(inGas.value)  || DEFAULTS.gas,
+      mpg:  parseFloat(inMpg.value)  || DEFAULTS.mpg
+    });
+    updateUI();
+  }));
+document.getElementById('seg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  [...e.currentTarget.children].forEach(x => x.classList.toggle('active', x === b));
+  scope = b.dataset.scope;
+  updateUI();
+});
+
+updateUI();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
 </body>
 </html>
