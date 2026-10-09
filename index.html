@@ -99,6 +99,8 @@
   .empty{text-align:center;padding:34px 16px;color:var(--muted)}
   .empty svg{opacity:.35;margin-bottom:10px}
   .empty p{font-size:13px;line-height:1.5}
+  .demo-banner{margin:-5px 0 14px;padding:10px 12px;border:1px solid #22e07c55;border-radius:11px;background:#22e07c12;color:var(--text);font-size:12px;line-height:1.45}
+  .demo-banner a{color:var(--accent);font-weight:650}
   /* ---------- action bar ---------- */
   .actionbar{
     position:fixed;left:0;right:0;bottom:0;z-index:20;
@@ -180,6 +182,7 @@
   </button>
 </div>
 
+<div class="demo-banner" id="demoBanner" hidden>Sample route · fictional stops and earnings for preview only. Your saved trips are untouched. <a href="./">Open my tracker</a></div>
 <div class="seg" id="seg">
   <button data-scope="today" class="active">Today</button>
   <button data-scope="week">This Week</button>
@@ -253,6 +256,7 @@
 <script>
 /* ---------------- settings ---------------- */
 const DEFAULTS = { rate: 0.90, gas: 3.10, mpg: 21 };
+const demoMode = new URLSearchParams(location.search).get('demo') === '1';
 function settings(){
   return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('mileTrackerSettings') || '{}'));
 }
@@ -279,8 +283,26 @@ function getWeekStartDate() {
   d.setDate(d.getDate() - d.getDay());
   return d;
 }
-const loadStops = () => JSON.parse(localStorage.getItem('mileTracker') || '{}');
-const saveStops = d => localStorage.setItem('mileTracker', JSON.stringify(d));
+// The public preview is read-only and never writes to the driver's saved routes.
+function demoStops() {
+  const now = new Date(), data = {};
+  const route = [
+    [35.2271,-80.8431,'Charlotte, NC'],
+    [35.2743,-80.8170,'North Charlotte, NC'],
+    [35.3277,-80.9419,'Mountain Island, NC'],
+    [35.4107,-80.8429,'Huntersville, NC'],
+    [35.4868,-80.8601,'Cornelius, NC']
+  ];
+  for (const offset of [0,1,2]) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset);
+    const time = (h,m) => new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,m).toISOString();
+    data[getDateKey(d)] = route.slice(0, offset === 0 ? 5 : offset === 1 ? 4 : 3)
+      .map(([lat,lon,address],i) => ({lat,lon,address,time:time(15+i,12+i*7)}));
+  }
+  return data;
+}
+const loadStops = () => demoMode ? demoStops() : JSON.parse(localStorage.getItem('mileTracker') || '{}');
+const saveStops = d => { if (!demoMode) localStorage.setItem('mileTracker', JSON.stringify(d)); };
 const getTodayStops = () => loadStops()[getDateKey()] || [];
 
 function getWeekDays() {
@@ -335,8 +357,8 @@ function updateUI() {
   document.getElementById('dateLabel').textContent =
     new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
 
-  document.getElementById('markLabel').textContent = todayStops.length ? 'Mark Stop' : 'Start Day';
-  document.getElementById('undoStop').style.display = todayStops.length ? 'flex' : 'none';
+  document.getElementById('markLabel').textContent = demoMode ? 'Preview only' : todayStops.length ? 'Mark Stop' : 'Start Day';
+  document.getElementById('undoStop').style.display = demoMode ? 'none' : todayStops.length ? 'flex' : 'none';
 
   const list = document.getElementById('stopsList');
   if (!todayStops.length) {
@@ -380,6 +402,7 @@ async function getAddress(lat, lon) {
 
 let busy = false;
 async function markStop() {
+  if (demoMode) return showStatus('Preview only · open your tracker to log stops');
   if (busy) return;
   if (!navigator.geolocation) return showStatus('Geolocation not supported', 'error');
   busy = true;
@@ -412,6 +435,7 @@ async function markStop() {
 }
 
 function undoStop() {
+  if (demoMode) return showStatus('Preview only · sample stops cannot be changed');
   const data = loadStops(), today = getDateKey();
   if (!data[today] || !data[today].length) return;
   if (!confirm('Remove the last stop?')) return;
@@ -440,6 +464,7 @@ function exportData() {
 }
 
 function clearToday() {
+  if (demoMode) return showStatus('Preview only · sample stops cannot be cleared');
   if (!confirm("Clear ALL of today's stops? This can't be undone.")) return;
   const data = loadStops();
   delete data[getDateKey()];
@@ -460,7 +485,7 @@ function closeSheet() {
     gas:  parseFloat(inGas.value)  || DEFAULTS.gas,
     mpg:  parseFloat(inMpg.value)  || DEFAULTS.mpg
   };
-  saveSettings(s);
+  if (!demoMode) saveSettings(s);
   sheet.classList.remove('open'); scrim.classList.remove('open');
   updateUI();
 }
@@ -489,7 +514,13 @@ document.getElementById('seg').addEventListener('click', e => {
   updateUI();
 });
 
+if (demoMode) {
+  document.getElementById('demoBanner').hidden = false;
+  document.getElementById('markStop').disabled = true;
+  document.getElementById('openSettings').disabled = true;
+}
 updateUI();
+if (demoMode) document.getElementById('undoStop').style.display = 'none';
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
